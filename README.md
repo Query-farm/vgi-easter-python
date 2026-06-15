@@ -5,12 +5,12 @@ that computes the date of **Western (Gregorian) Easter Sunday** for a given year
 and exposes it to DuckDB as a SQL scalar function.
 
 ```sql
-ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'uvx vgi-easter');
+ATTACH 'easter' (TYPE 'vgi', LOCATION 'uvx vgi-easter');
 
-SELECT easter_date(2025);
+SELECT easter.easter_date(2025);
 -- 2025-04-20
 
-SELECT year, easter_date(year) AS easter
+SELECT year, easter.easter_date(year) AS easter
 FROM range(2020, 2031) t(year);
 -- 2020  2020-04-12
 -- 2021  2021-04-04
@@ -78,8 +78,8 @@ server to manage — point the LOCATION at the installed command (or `uvx
 vgi-easter` to fetch it on demand):
 
 ```sql
-ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'uvx vgi-easter');
-SELECT easter_date(2025);
+ATTACH 'easter' (TYPE 'vgi', LOCATION 'uvx vgi-easter');
+SELECT easter.easter_date(2025);
 DETACH easter;
 ```
 
@@ -95,8 +95,8 @@ VGI_SIGNING_KEY=dev vgi-easter-http --host 0.0.0.0 --port 8000
 Then attach over HTTP (the VGI extension auto-loads `httpfs`):
 
 ```sql
-ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'http://localhost:8000');
-SELECT easter_date(2025);
+ATTACH 'easter' (TYPE 'vgi', LOCATION 'http://localhost:8000');
+SELECT easter.easter_date(2025);
 ```
 
 ### From a source checkout
