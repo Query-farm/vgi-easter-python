@@ -76,11 +76,13 @@ jobs:
           # The worker LOCATION is consumed by the (native) extension process,
           # so on Windows it must be a native path to the .exe launcher; the
           # unittest binary itself is exec'd by bash, so a POSIX path is fine.
+          # Absolute paths: run-integration.sh cd's into a staging dir before
+          # invoking the runner, so a relative path would not resolve.
           if [ "$RUNNER_OS" = "Windows" ]; then
-            UNITTEST=$(find hb -name 'haybarn-unittest.exe' -type f | head -1)
+            UNITTEST="$PWD/$(find hb -name 'haybarn-unittest.exe' -type f | head -1)"
             WORKER=$(cygpath -w "$PWD/.venv/Scripts/vgi-easter.exe")
           else
-            UNITTEST=$(find hb -name 'haybarn-unittest' -type f | head -1)
+            UNITTEST="$PWD/$(find hb -name 'haybarn-unittest' -type f | head -1)"
             chmod +x "$UNITTEST"
             WORKER="$PWD/.venv/bin/vgi-easter"
           fi
