@@ -24,6 +24,7 @@ from __future__ import annotations
 import dataclasses
 import os
 from datetime import date
+from importlib.metadata import PackageNotFoundError, version
 from typing import Annotated, Any
 
 import pyarrow as pa
@@ -36,7 +37,26 @@ from vgi.metadata import FunctionExample
 from vgi.scalar_function import ScalarFunction
 
 DATA_VERSION = "1.0.0"
-GIT_COMMIT = os.environ.get("VGI_EASTER_GIT_COMMIT") or "unknown"
+
+
+def _implementation_version() -> str:
+    """Version reported as the catalog's ``implementation_version``.
+
+    Prefer an explicit git SHA from ``VGI_EASTER_GIT_COMMIT`` (handy in CI/dev
+    builds); otherwise fall back to the installed package version, so a normal
+    ``pip install vgi-easter`` reports the release version (e.g. ``0.1.2``).
+    ``"unknown"`` only if neither is available (e.g. an uninstalled checkout).
+    """
+    sha = os.environ.get("VGI_EASTER_GIT_COMMIT")
+    if sha:
+        return sha
+    try:
+        return version("vgi-easter")
+    except PackageNotFoundError:
+        return "unknown"
+
+
+IMPLEMENTATION_VERSION = _implementation_version()
 
 
 def _easter_sunday(year: int) -> date:
@@ -118,7 +138,11 @@ _EASTER_CATALOG = Catalog(
 
 
 class EasterCatalog(ReadOnlyCatalogInterface):
-    """Easter catalog that advertises a data version and git-SHA implementation version."""
+    """Easter catalog advertising a data version and an implementation version.
+
+    ``implementation_version`` is the git SHA (``VGI_EASTER_GIT_COMMIT``) when
+    set, else the installed package version. See ``_implementation_version``.
+    """
 
     catalog = _EASTER_CATALOG
     catalog_name = _EASTER_CATALOG.name
@@ -127,7 +151,7 @@ class EasterCatalog(ReadOnlyCatalogInterface):
         return [
             CatalogInfo(
                 name=self._effective_catalog_name,
-                implementation_version=GIT_COMMIT,
+                implementation_version=IMPLEMENTATION_VERSION,
                 data_version_spec=DATA_VERSION,
                 attach_option_specs=[spec.serialize() for spec in self.attach_option_specs],
             )
@@ -138,7 +162,7 @@ class EasterCatalog(ReadOnlyCatalogInterface):
         return dataclasses.replace(
             result,
             resolved_data_version=DATA_VERSION,
-            resolved_implementation_version=GIT_COMMIT,
+            resolved_implementation_version=IMPLEMENTATION_VERSION,
         )
 
 

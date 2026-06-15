@@ -406,7 +406,7 @@ wheels = [
 
 [[package]]
 name = "vgi-easter"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "vgi-python", extra = ["http"] },

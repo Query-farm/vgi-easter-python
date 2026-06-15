@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from datetime import date
+from importlib.metadata import version
 
 import pyarrow as pa
 import pytest
 
-from easter_worker import EasterDateFunction, _easter_sunday
+from easter_worker import EasterDateFunction, _easter_sunday, _implementation_version
 
 # Known Western (Gregorian) Easter Sunday dates.
 KNOWN_EASTERS = [
@@ -41,3 +42,14 @@ def test_compute_null_propagation() -> None:
     years = pa.array([2025, None, 2026], type=pa.int64())
     result = EasterDateFunction.compute(years)
     assert result.to_pylist() == [date(2025, 4, 20), None, date(2026, 4, 5)]
+
+
+def test_implementation_version_prefers_git_commit(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("VGI_EASTER_GIT_COMMIT", "deadbeef")
+    assert _implementation_version() == "deadbeef"
+
+
+def test_implementation_version_falls_back_to_package_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    # With no git SHA set, an installed worker reports the release version.
+    monkeypatch.delenv("VGI_EASTER_GIT_COMMIT", raising=False)
+    assert _implementation_version() == version("vgi-easter")

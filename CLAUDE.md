@@ -27,8 +27,9 @@ Effectively everything lives in two files:
   - `_EASTER_CATALOG` — `Catalog(name="easter")` with a single `main` schema
     holding `EasterDateFunction`.
   - `EasterCatalog(ReadOnlyCatalogInterface)` — advertises `data_version`
-    (`DATA_VERSION = "1.0.0"`) and `implementation_version` (`GIT_COMMIT`, from
-    `VGI_EASTER_GIT_COMMIT`, else `"unknown"`).
+    (`DATA_VERSION = "1.0.0"`) and `implementation_version`
+    (`_implementation_version()`: the `VGI_EASTER_GIT_COMMIT` SHA if set, else
+    the installed package version, else `"unknown"`).
   - `EasterWorker(Worker)` — binds the catalog + interface. `main()` runs stdio
     mode; `main_http()` runs the HTTP server.
 - **`serve.py`** — three lines: imports `EasterWorker` and calls `main_http()`.
@@ -107,8 +108,9 @@ sqllogictest files exercised through the real DuckDB VGI extension, gated on
 `require-env VGI_EASTER_WORKER`:
 
 - `easter_catalog.test` — `vgi_catalogs()` discovery, `data_version_spec`
-  (asserts `1.0.0`; `implementation_version` is the varying git SHA and is *not*
-  asserted), `ATTACH ... (TYPE vgi)`, and `information_schema.schemata`.
+  (asserts `1.0.0`; `implementation_version` varies by build — git SHA or
+  package version — and is *not* asserted), `ATTACH ... (TYPE vgi)`, and
+  `information_schema.schemata`.
 - `easter_function.test` — scalar calls (`easter.main.easter_date(2025)`),
   `typeof(...) = 'DATE'`, and `easter_date(NULL::BIGINT) IS NULL`.
 
@@ -152,7 +154,8 @@ ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'http://localhost:8000');
 ## Environment variables
 
 - `VGI_SIGNING_KEY` — stable key for state-token signing (HTTP server).
-- `VGI_EASTER_GIT_COMMIT` — reported as the catalog `implementation_version`.
+- `VGI_EASTER_GIT_COMMIT` — when set, overrides the catalog
+  `implementation_version` (otherwise it's the installed package version).
 - `VGI_HTTP_PORT` (default 8000), `VGI_HTTP_HOST` — HTTP bind address.
 - `VGI_WORKER_DEBUG=1` — debug logging.
 
