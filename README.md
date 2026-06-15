@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Query-farm/vgi-easter/main/assets/vgi-logo.png"
+       alt="Vector Gateway Interface" width="420">
+</p>
+
 # vgi-easter
 
 A minimal [VGI (Vector Gateway Interface)](https://github.com/Query-farm) worker
