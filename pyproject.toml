@@ -34,8 +34,8 @@ vgi-easter-http = "serve:main"
 
 [project.urls]
 Homepage = "https://query.farm"
-Repository = "https://github.com/Query-farm/vgi-easter"
-Issues = "https://github.com/Query-farm/vgi-easter/issues"
+Repository = "https://github.com/Query-farm/vgi-easter-python"
+Issues = "https://github.com/Query-farm/vgi-easter-python/issues"
 
 [build-system]
 requires = ["hatchling"]

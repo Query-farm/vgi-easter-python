@@ -10,6 +10,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
   workflow_call:
@@ -17,8 +18,11 @@ on:
 permissions:
   contents: read
 
+# Scope the group by workflow too: when publish.yml calls this reusable workflow
+# for a tag/ref, it must not share a group with (and cancel) a standalone CI run
+# on the same ref. `github.workflow` is the caller's name under workflow_call.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

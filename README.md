@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Query-farm/vgi-easter/main/assets/vgi-logo.png" alt="Vector Gateway Interface" width="420">
+  <img src="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/vgi-logo.png" alt="Vector Gateway Interface" width="420">
 </p>
 
 # vgi-easter
 
-[![CI](https://github.com/Query-farm/vgi-easter/actions/workflows/ci.yml/badge.svg)](https://github.com/Query-farm/vgi-easter/actions/workflows/ci.yml)
+[![CI](https://github.com/Query-farm/vgi-easter-python/actions/workflows/ci.yml/badge.svg)](https://github.com/Query-farm/vgi-easter-python/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/vgi-easter.svg)](https://pypi.org/project/vgi-easter/)
 [![Python](https://img.shields.io/pypi/pyversions/vgi-easter.svg)](https://pypi.org/project/vgi-easter/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
