@@ -19,6 +19,11 @@ which makes it a clean, copyable example of a VGI scalar-function worker.
 In DuckDB:
 
 ```sql
+-- VGI isn't bundled with DuckDB yet, so load it from the community channel
+-- (INSTALL is a one-time download; LOAD is once per session).
+INSTALL vgi FROM community;
+LOAD vgi;
+
 ATTACH 'easter' (TYPE 'vgi', LOCATION 'uvx vgi-easter');
 
 SELECT easter.easter_date(2025);   -- 2025-04-20
@@ -67,6 +72,7 @@ VGI_SIGNING_KEY=dev vgi-easter-http --host 0.0.0.0 --port 8000
 ```
 
 ```sql
+LOAD vgi;   -- after a one-time INSTALL vgi FROM community
 ATTACH 'easter' (TYPE 'vgi', LOCATION 'http://localhost:8000');
 ```
 
@@ -104,6 +110,28 @@ Linux, macOS, and Windows — see [`ci/README.md`](ci/README.md).
 `vgi-easter` is built with hatchling and published to PyPI by CI when a GitHub
 Release is created (it runs the test suites, then `uv build && uv publish`). To
 cut a release, bump `version` in `pyproject.toml` and publish a GitHub Release.
+
+## Built with
+
+<p align="center">
+  <a href="https://duckdb.org">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/duckdb-inline-darkmode.png">
+      <img alt="DuckDB" height="44" src="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/duckdb-inline-lightmode.png">
+    </picture>
+  </a>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/Query-farm-haybarn">
+    <img alt="Haybarn" height="64" src="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/haybarn-logo.png">
+  </a>
+</p>
+
+- **[DuckDB](https://duckdb.org)** attaches and queries the worker — install the
+  VGI extension with `INSTALL vgi FROM community; LOAD vgi;`.
+- **[vgi-python](https://pypi.org/project/vgi-python/)** is the VGI worker SDK
+  this is built on.
+- **[Haybarn](https://github.com/Query-farm-haybarn)** provides the
+  DuckDB-compatible `unittest` runner that drives the cross-platform CI.
 
 ## License
 
