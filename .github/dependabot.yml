@@ -1,0 +1,25 @@
+# Copyright 2026 Query Farm LLC - https://query.farm
+#
+# Automated dependency updates. github-actions keeps the workflow actions
+# current; uv bumps the Python dependencies recorded in uv.lock (driven by the
+# constraints in pyproject.toml). Updates are grouped to minimise PR noise and
+# auto-merged once CI is green (see .github/workflows/dependabot-auto-merge.yml).
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # The Python deps are the point of this repo's freshness (vgi-python /
+  # vgi-rpc), so check daily — the most frequent interval Dependabot supports.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    groups:
+      python:
+        patterns: ["*"]

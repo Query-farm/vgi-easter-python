@@ -82,16 +82,14 @@ uv run --python 3.13 easter_worker.py
 # Run the HTTP server
 VGI_SIGNING_KEY=dev uv run --python 3.13 serve.py --host 0.0.0.0 --port 8000
 
-# Unit tests (pytest). vgi-python resolves from PyPI; -o "addopts=" guards
-# against any inherited pytest addopts.
-uv run --python 3.13 \
-  --with pytest --with vgi-python \
-  pytest tests/ --rootdir=. -o "addopts=" -q
+# Unit tests (pytest), installing exactly what uv.lock pins.
+uv run --frozen --python 3.13 pytest tests/ -q
 ```
 
-There is no `.venv` checked in (it's gitignored); the `uv run --with ...`
-invocation above resolves a throwaway environment. If you create a project venv,
-prefer `.venv/bin/pytest` over bare `pytest`.
+`uv.lock` is committed (dev/CI reproducibility + the Dependabot `uv` update
+target); it does not affect end users, who install via the `pyproject.toml`
+ranges. `.venv/` is gitignored. `uv sync --frozen --python 3.13` materialises
+the locked environment (and the `vgi-easter` console script) under `.venv/`.
 
 ## Testing
 
@@ -126,12 +124,17 @@ PyPI without a green extension run. See `ci/README.md`.
 
 ### CI / publishing
 
-- `.github/workflows/ci.yml` — unit tests + extension integration suite
-  (reusable via `workflow_call`).
+- `.github/workflows/ci.yml` — unit tests + extension integration suite on
+  Linux, macOS, and Windows (reusable via `workflow_call`). A `resolve-haybarn`
+  job picks the latest Haybarn release at run time (nothing pinned).
 - `.github/workflows/publish.yml` — on GitHub Release (or manual dispatch),
   runs `ci.yml` then `uv build && uv publish`. Token-based, no trusted
   publishing: needs the `PYPI_API_TOKEN` repo secret (passed as
   `UV_PUBLISH_TOKEN`).
+- `.github/dependabot.yml` — github-actions (weekly) + Python deps via `uv.lock`
+  (daily). `.github/workflows/dependabot-auto-merge.yml` squash-merges green
+  Dependabot PRs after CI passes (via `workflow_run`, so no branch protection is
+  required and direct pushes to `main` still work).
 
 ## ATTACH syntax
 

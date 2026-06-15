@@ -21,12 +21,23 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # Haybarn release providing the prebuilt haybarn-unittest binary. Must be
-  # ABI-compatible with the community-published vgi extension. See ci/README.md.
-  HAYBARN_RELEASE: haybarn-v1.5.3-rc10
-
 jobs:
+  # Resolve the latest published haybarn release once, so the whole matrix tests
+  # the same version (and we never hardcode/pin it). haybarn is public, so the
+  # default token can read it — including on Dependabot PRs.
+  resolve-haybarn:
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.r.outputs.release }}
+    steps:
+      - id: r
+        run: |
+          REL=$(gh release view --repo Query-farm-haybarn/haybarn --json tagName --jq .tagName)
+          echo "release=$REL" >> "$GITHUB_OUTPUT"
+          echo "Latest haybarn release: $REL"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   unit:
     strategy:
       fail-fast: false
@@ -37,9 +48,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - name: Run unit tests
-        run: uv run --python 3.13 pytest tests/ -q
+        run: uv run --frozen --python 3.13 pytest tests/ -q
 
   integration:
+    needs: resolve-haybarn
     strategy:
       fail-fast: false
       matrix:
@@ -56,10 +68,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
 
-      - name: Install the easter worker
-        run: |
-          uv venv --python 3.13 .venv
-          uv pip install --python .venv .
+      - name: Install the easter worker (from the lockfile)
+        run: uv sync --frozen --python 3.13
 
       - name: Download haybarn-unittest
         run: |
@@ -70,14 +80,14 @@ jobs:
           mkdir -p hb && unzip -o -q haybarn-unittest.zip -d hb
         env:
           GH_TOKEN: ${{ github.token }}
+          HAYBARN_RELEASE: ${{ needs.resolve-haybarn.outputs.release }}
 
       - name: Resolve runner + worker paths
         run: |
-          # The worker LOCATION is consumed by the (native) extension process,
-          # so on Windows it must be a native path to the .exe launcher; the
-          # unittest binary itself is exec'd by bash, so a POSIX path is fine.
           # Absolute paths: run-integration.sh cd's into a staging dir before
-          # invoking the runner, so a relative path would not resolve.
+          # invoking the runner, so relative paths would not resolve. The worker
+          # LOCATION is consumed by the (native) extension process, so on Windows
+          # it must be a native path to the .exe launcher.
           if [ "$RUNNER_OS" = "Windows" ]; then
             UNITTEST="$PWD/$(find hb -name 'haybarn-unittest.exe' -type f | head -1)"
             WORKER=$(cygpath -w "$PWD/.venv/Scripts/vgi-easter.exe")

@@ -38,8 +38,9 @@ extension from the Haybarn community channel:
 ## Run it locally
 
 ```bash
-uv venv .venv --python 3.13 && uv pip install --python .venv .
-gh release download haybarn-v1.5.3-rc10 --repo Query-farm-haybarn/haybarn \
+uv sync --frozen --python 3.13
+REL=$(gh release view --repo Query-farm-haybarn/haybarn --json tagName --jq .tagName)
+gh release download "$REL" --repo Query-farm-haybarn/haybarn \
   --pattern 'haybarn_unittest-osx-arm64.zip' --output /tmp/hb.zip --clobber
 unzip -o /tmp/hb.zip -d /tmp/hb
 HAYBARN_UNITTEST=/tmp/hb/haybarn-unittest \
@@ -47,14 +48,24 @@ VGI_EASTER_WORKER="$PWD/.venv/bin/vgi-easter" \
   ci/run-integration.sh
 ```
 
-(Swap the asset pattern for your platform: `haybarn_unittest-linux-amd64.zip`
-on CI.)
+(Swap the asset pattern for your platform: `haybarn_unittest-linux-amd64.zip`,
+`haybarn_unittest-windows-amd64.zip`.)
 
-## Version pin (and its coupling)
+## Haybarn version (resolved, not pinned)
 
-`HAYBARN_RELEASE` in [`ci.yml`](../.github/workflows/ci.yml) pins the Haybarn
-release supplying `haybarn-unittest`; it must be ABI-compatible with the
-community-published `vgi` extension. The vgi extension is pulled live from the
+The `resolve-haybarn` job in [`ci.yml`](../.github/workflows/ci.yml) queries the
+**latest** published Haybarn release at run time and feeds that one tag to the
+whole matrix — nothing is hardcoded. The `vgi` extension is pulled live from the
 community channel (`INSTALL vgi FROM community`), which always serves the
-currently published build — so CI verifies the worker against what users can
-actually install today. Bump the pin deliberately and re-run the suite.
+currently published build, so CI verifies the worker against what users can
+actually install today. (The trade-off: a brand-new Haybarn release that isn't
+yet ABI-matched by the published `vgi` extension could break a run — that's the
+coupling to watch if the suite suddenly fails without a code change.)
+
+## Dependency updates
+
+[`.github/dependabot.yml`](../.github/dependabot.yml) keeps things current:
+`github-actions` weekly, and the Python deps (`vgi-python` / `vgi-rpc`, via
+`uv.lock`) **daily**. Green Dependabot PRs are squash-merged automatically by
+[`dependabot-auto-merge.yml`](../.github/workflows/dependabot-auto-merge.yml)
+after this CI workflow passes.

@@ -1,0 +1,41 @@
+# Copyright 2026 Query Farm LLC - https://query.farm
+#
+# Auto-merge Dependabot PRs once CI is green. Triggered by the CI workflow
+# *completing* (workflow_run), so the merge only happens after the unit +
+# extension suites pass on all three OSes — without requiring branch protection
+# (direct pushes to main keep working). Squash-merges and deletes the branch.
+name: Dependabot auto-merge
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    # Only for a successful CI run that was itself triggered by a Dependabot PR.
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Squash-merge the green Dependabot PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open \
+                 --json number,author \
+                 --jq '.[] | select(.author.login == "app/dependabot") | .number' | head -1)
+          if [ -z "$PR" ]; then
+            echo "No open Dependabot PR for $BRANCH — nothing to merge."
+            exit 0
+          fi
+          echo "Merging Dependabot PR #$PR ($BRANCH)"
+          gh pr merge "$PR" --repo "$REPO" --squash --delete-branch
