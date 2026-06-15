@@ -2,9 +2,15 @@
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs the unit tests
 and this repo's sqllogictest suite (`test/sql/*.test`) against the easter VGI
-worker through the **real DuckDB `vgi` extension** on every push / PR — and is
-reused by [`publish.yml`](../.github/workflows/publish.yml) so nothing reaches
-PyPI without a green extension run.
+worker through the **real DuckDB `vgi` extension** on every push / PR — across
+**Linux, macOS, and Windows** — and is reused by
+[`publish.yml`](../.github/workflows/publish.yml) so nothing reaches PyPI
+without a green extension run on all three.
+
+Both jobs run as an OS matrix. The integration job selects the matching
+`haybarn_unittest-*` asset per platform (`linux-amd64`, `osx-arm64`,
+`windows-amd64`); on Windows the bash steps run under Git Bash and the worker
+LOCATION is the native path to the `.venv/Scripts/vgi-easter.exe` launcher.
 
 ## How it works (no C++ build)
 
