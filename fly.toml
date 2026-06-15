@@ -1,0 +1,24 @@
+# Copyright 2026 Query Farm LLC - https://query.farm
+#
+# Fly.io deployment for the easter VGI worker's HTTP transport. DuckDB clients
+# attach it over https://vgi-easter-python.fly.dev — e.g.
+#   INSTALL vgi FROM community; LOAD vgi;
+#   ATTACH 'easter' (TYPE 'vgi', LOCATION 'https://vgi-easter-python.fly.dev');
+#
+# VGI_SIGNING_KEY is provided as a Fly secret (set via `fly secrets set`).
+app = "vgi-easter-python"
+primary_region = "iad"
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Scale to zero: stop when idle, auto-start on the next request.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
