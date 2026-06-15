@@ -48,20 +48,30 @@ classmethod whose params/return are annotated:
 - null handling is manual: `compute` iterates `year.to_pylist()` and maps
   `None -> None`.
 
-## Dependencies & Python version
+## Packaging, dependencies & Python version
 
-Requires **Python 3.13+**, managed with `uv`. Deps are declared inline as
-PEP 723 script metadata in `easter_worker.py` and `serve.py`:
+Requires **Python 3.13+**, managed with `uv`. This repo is a published PyPI
+distribution named **`vgi-easter`** (hatchling build; see `pyproject.toml`). The
+sole dependency is **`vgi-python[http]`** (PyPI; imports as `vgi`) — the `http`
+extra pulls in the HTTP-server transport. The distribution name on PyPI is
+`vgi-python`, *not* `vgi` (which is unregistered); the inline path sources for
+the sibling checkouts have been removed.
 
-```python
-# dependencies = ["vgi[http,oauth]", "vgi-rpc[sentry]"]
-# [tool.uv.sources]
-# vgi = { path = "../vgi-python" }
-# vgi-rpc = { path = "../vgi-rpc" }
+`pyproject.toml` packages the two flat modules (`easter_worker.py`, `serve.py`)
+explicitly via `[tool.hatch.build.targets.wheel] include` and registers two
+console scripts:
+
+- `vgi-easter` → `easter_worker:main` (stdio transport)
+- `vgi-easter-http` → `serve:main` (HTTP server)
+
+The same modules also carry inline PEP 723 metadata
+(`vgi-python[http]>=0.8.0`), so `uv run easter_worker.py` works from a checkout
+without installing.
+
+```bash
+uv build      # build wheel + sdist into dist/
+uv publish    # upload to PyPI
 ```
-
-In development, `vgi` and `vgi-rpc` resolve against the sibling checkouts
-`~/Development/vgi-python` and `~/Development/vgi-rpc`.
 
 ## Commands
 
@@ -72,10 +82,10 @@ uv run --python 3.13 easter_worker.py
 # Run the HTTP server
 VGI_SIGNING_KEY=dev uv run --python 3.13 serve.py --host 0.0.0.0 --port 8000
 
-# Unit tests (pytest). The --rootdir/-o flags stop pytest from picking up an
-# upstream pyproject that injects --mypy --ruff.
+# Unit tests (pytest). vgi-python resolves from PyPI; -o "addopts=" guards
+# against any inherited pytest addopts.
 uv run --python 3.13 \
-  --with pytest --with pyarrow --with ../vgi-python --with ../vgi-rpc \
+  --with pytest --with vgi-python \
   pytest tests/ --rootdir=. -o "addopts=" -q
 ```
 
@@ -107,13 +117,30 @@ sqllogictest files exercised through the real DuckDB VGI extension, gated on
 Run them with the DuckDB `unittest` binary built with the VGI extension, with
 `VGI_EASTER_WORKER` set to a worker LOCATION (stdio command or HTTP URL).
 
+In CI this is automated without a C++ build: `ci/run-integration.sh` drives a
+prebuilt standalone `haybarn-unittest` and installs the signed `vgi` extension
+from the community channel, with `ci/preprocess-require.awk` rewriting each
+`require <ext>` into `INSTALL/LOAD`. `.github/workflows/ci.yml` runs the unit +
+integration suite on push/PR and is reused by `publish.yml` so nothing reaches
+PyPI without a green extension run. See `ci/README.md`.
+
+### CI / publishing
+
+- `.github/workflows/ci.yml` — unit tests + extension integration suite
+  (reusable via `workflow_call`).
+- `.github/workflows/publish.yml` — on GitHub Release (or manual dispatch),
+  runs `ci.yml` then `uv build && uv publish`. Token-based, no trusted
+  publishing: needs the `PYPI_API_TOKEN` repo secret (passed as
+  `UV_PUBLISH_TOKEN`).
+
 ## ATTACH syntax
 
 The VGI extension auto-detects transport from LOCATION:
 
 ```sql
--- stdio: DuckDB spawns the worker
-ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'uv run --python 3.13 easter_worker.py');
+-- stdio: DuckDB spawns the worker (installed command, or `uvx vgi-easter`;
+-- from a checkout, `uv run --python 3.13 easter_worker.py`)
+ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'uvx vgi-easter');
 
 -- HTTP: worker running as a server (requires httpfs, which the extension auto-loads)
 ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'http://localhost:8000');

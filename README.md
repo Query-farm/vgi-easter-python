@@ -5,7 +5,7 @@ that computes the date of **Western (Gregorian) Easter Sunday** for a given year
 and exposes it to DuckDB as a SQL scalar function.
 
 ```sql
-ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'uv run --python 3.13 easter_worker.py');
+ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'uvx vgi-easter');
 
 SELECT easter_date(2025);
 -- 2025-04-20
@@ -51,33 +51,45 @@ The entire implementation lives in [`easter_worker.py`](easter_worker.py):
 ## Requirements
 
 - Python **3.13+**
-- [`uv`](https://docs.astral.sh/uv/) for dependency management
+- [`uv`](https://docs.astral.sh/uv/) (recommended) or `pip`
 
-Dependencies are declared inline as [PEP 723](https://peps.python.org/pep-0723/)
-script metadata in `easter_worker.py` and `serve.py`. During development they
-resolve against the sibling checkouts `../vgi-python` and `../vgi-rpc`.
+The only dependency is [`vgi-python`](https://pypi.org/project/vgi-python/) (the
+`http` extra adds the HTTP-server transport); it is published on PyPI, so no
+sibling checkouts are needed.
+
+## Installing
+
+```bash
+# Install from PyPI (provides the vgi-easter and vgi-easter-http commands)
+pip install vgi-easter
+# or run it ad hoc without installing
+uvx vgi-easter
+```
 
 ## Running
 
-The worker supports both VGI transports.
+The worker supports both VGI transports. Two console scripts are installed:
+`vgi-easter` (stdio) and `vgi-easter-http` (HTTP server).
 
 ### stdio (DuckDB spawns the worker)
 
 DuckDB runs the worker as a subprocess and talks to it over stdin/stdout. No
-server to manage:
+server to manage — point the LOCATION at the installed command (or `uvx
+vgi-easter` to fetch it on demand):
 
 ```sql
-ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'uv run --python 3.13 easter_worker.py');
+ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'uvx vgi-easter');
 SELECT easter_date(2025);
 DETACH easter;
 ```
 
 ### HTTP
 
-Start the worker as an HTTP server (`serve.py` calls `EasterWorker.main_http()`):
+Start the worker as an HTTP server (`vgi-easter-http` calls
+`EasterWorker.main_http()`):
 
 ```bash
-VGI_SIGNING_KEY=dev uv run --python 3.13 serve.py --host 0.0.0.0 --port 8000
+VGI_SIGNING_KEY=dev vgi-easter-http --host 0.0.0.0 --port 8000
 ```
 
 Then attach over HTTP (the VGI extension auto-loads `httpfs`):
@@ -85,6 +97,16 @@ Then attach over HTTP (the VGI extension auto-loads `httpfs`):
 ```sql
 ATTACH 'easter' AS easter (TYPE vgi, LOCATION 'http://localhost:8000');
 SELECT easter_date(2025);
+```
+
+### From a source checkout
+
+The two modules also carry inline [PEP 723](https://peps.python.org/pep-0723/)
+metadata, so you can run them directly without installing:
+
+```bash
+uv run --python 3.13 easter_worker.py            # stdio
+VGI_SIGNING_KEY=dev uv run --python 3.13 serve.py --host 0.0.0.0 --port 8000  # HTTP
 ```
 
 ## Testing
@@ -97,7 +119,7 @@ propagation:
 
 ```bash
 uv run --python 3.13 \
-  --with pytest --with pyarrow --with ../vgi-python --with ../vgi-rpc \
+  --with pytest --with vgi-python \
   pytest tests/ --rootdir=. -o "addopts=" -q
 ```
 
@@ -128,6 +150,15 @@ LOCATION (a stdio command or an HTTP URL) and run them with the DuckDB
 | `VGI_HTTP_PORT` / `VGI_HTTP_HOST` | HTTP bind address (defaults: `8000` / all interfaces).      |
 | `VGI_WORKER_DEBUG`        | Set to `1` for debug logging.                                       |
 
+## Publishing
+
+This repo is a packaged distribution (`vgi-easter`) built with hatchling:
+
+```bash
+uv build                       # writes dist/*.whl and dist/*.tar.gz
+uv publish                     # upload to PyPI (needs a token)
+```
+
 ## License
 
-Copyright © Query.Farm. All rights reserved.
+MIT — see [LICENSE](LICENSE). Copyright 2026 Query Farm LLC — https://query.farm

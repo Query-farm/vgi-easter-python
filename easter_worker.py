@@ -1,13 +1,8 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi[http,oauth]",
-#     "vgi-rpc[sentry]",
+#     "vgi-python[http]>=0.8.0",
 # ]
-#
-# [tool.uv.sources]
-# vgi = { path = "../vgi-python" }
-# vgi-rpc = { path = "../vgi-rpc" }
 # ///
 """VGI worker that computes the date of Easter Sunday for a given year.
 

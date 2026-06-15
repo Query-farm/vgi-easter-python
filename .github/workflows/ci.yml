@@ -1,0 +1,65 @@
+# Copyright 2026 Query Farm LLC - https://query.farm
+#
+# Unit tests + the sqllogictest extension suite (test/sql/*.test) run against
+# the easter worker through the real signed `vgi` DuckDB community extension via
+# a prebuilt standalone `haybarn-unittest`. See ci/README.md for the design.
+#
+# Reusable (workflow_call) so publish.yml can gate releases on a green run.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Haybarn release providing the prebuilt haybarn-unittest binary. Must be
+  # ABI-compatible with the community-published vgi extension. See ci/README.md.
+  HAYBARN_RELEASE: haybarn-v1.5.3-rc10
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Run unit tests
+        run: uv run --python 3.13 pytest tests/ -q
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Install the easter worker
+        run: |
+          uv venv --python 3.13 .venv
+          uv pip install --python .venv .
+
+      - name: Download haybarn-unittest
+        run: |
+          gh release download "$HAYBARN_RELEASE" \
+            --repo Query-farm-haybarn/haybarn \
+            --pattern 'haybarn_unittest-linux-amd64.zip' \
+            --output /tmp/haybarn-unittest.zip --clobber
+          unzip -o -q /tmp/haybarn-unittest.zip -d /tmp/haybarn-unittest
+          UNITTEST=$(find /tmp/haybarn-unittest -name 'haybarn-unittest' -type f | head -1)
+          chmod +x "$UNITTEST"
+          echo "HAYBARN_UNITTEST=$UNITTEST" >> "$GITHUB_ENV"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Run extension integration suite
+        run: ci/run-integration.sh
+        env:
+          HAYBARN_UNITTEST: ${{ env.HAYBARN_UNITTEST }}
+          VGI_EASTER_WORKER: ${{ github.workspace }}/.venv/bin/vgi-easter
