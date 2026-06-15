@@ -14,6 +14,19 @@ that gives DuckDB one SQL function — `easter_date(year)` — returning the dat
 Western (Gregorian) Easter Sunday. It has no external data and almost no code,
 which makes it a clean, copyable example of a VGI scalar-function worker.
 
+<p align="center">
+  <a href="https://duckdb.org">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/duckdb-inline-darkmode.png">
+      <img alt="DuckDB" height="44" src="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/duckdb-inline-lightmode.png">
+    </picture>
+  </a>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/Query-farm-haybarn">
+    <img alt="Haybarn" height="64" src="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/haybarn-logo.png">
+  </a>
+</p>
+
 ## Quick start
 
 In DuckDB:
@@ -112,19 +125,6 @@ Release is created (it runs the test suites, then `uv build && uv publish`). To
 cut a release, bump `version` in `pyproject.toml` and publish a GitHub Release.
 
 ## Built with
-
-<p align="center">
-  <a href="https://duckdb.org">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/duckdb-inline-darkmode.png">
-      <img alt="DuckDB" height="44" src="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/duckdb-inline-lightmode.png">
-    </picture>
-  </a>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/Query-farm-haybarn">
-    <img alt="Haybarn" height="64" src="https://raw.githubusercontent.com/Query-farm/vgi-easter-python/main/assets/haybarn-logo.png">
-  </a>
-</p>
 
 - **[DuckDB](https://duckdb.org)** attaches and queries the worker — install the
   VGI extension with `INSTALL vgi FROM community; LOAD vgi;`.
