@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/vgi-logo.png" alt="Vector Gateway Interface" width="420">
+  <img src="https://raw.githubusercontent.com/Query-farm/vgi-easter/main/assets/vgi-logo.png" alt="Vector Gateway Interface" width="420">
 </p>
 
 # vgi-easter
