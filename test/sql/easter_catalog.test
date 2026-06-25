@@ -20,10 +20,11 @@ easter
 
 # The catalog advertises a stable data version. (implementation_version is the
 # git SHA from VGI_EASTER_GIT_COMMIT, which varies, so it is not asserted here.)
+# data_version_spec is a semver *range* (vgi-lint VGI005), not a bare version.
 query I
 SELECT data_version_spec FROM vgi_catalogs('${VGI_EASTER_WORKER}');
 ----
-1.0.0
+>=1.0.0,<2.0.0
 
 # ============================================================================
 # ATTACH and schema discovery
